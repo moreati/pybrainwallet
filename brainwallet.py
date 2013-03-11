@@ -203,16 +203,17 @@ def main():
     elif args.max_length is not None:
         passphrases = (p for p in passphrases if len(p) <= args.max_length)
 
-    results = ((passphrase, get_addr(gen_eckey(passphrase=passphrase)))
+    results = ((passphrase, gen_eckey(passphrase=passphrase))
                for passphrase in passphrases)
 
     if args.candidates_file:
-        candidates = set(line.rstrip() for line in args.candidates_file)
-        results = ((passphrase, addr) for passphrase, addr in results
-                   if addr[0] in candidates)
+        candidates = frozenset(base58_check_decode(line.rstrip())
+                               for line in args.candidates_file)
+        results = ((passphrase, key) for passphrase, key in results
+                   if rhash(key.get_pubkey()) in candidates)
 
-    for passphrase, addr in results:
-        print passphrase, addr
+    for passphrase, key in results:
+        print passphrase, get_addr(key)
 
 if __name__ == '__main__':
     main()
