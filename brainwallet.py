@@ -167,7 +167,13 @@ def get_addr(k):
         payload = secret + chr(1)
     pkey = base58_check_encode(payload, 128)
     return addr, pkey
-	
+
+def gen_secret(it):
+    h = hashlib.new('sha256')
+    for s in it:
+        h.update(s.encode('utf-8'))
+    return h.digest()
+
 # Method   seq  r  result                   Num results
 # product  ABCD 2  AA AB AC AD BA BB BC BD  n**r        4**2          16
 #                  CA CB CC CD DA DB DC DD    
@@ -204,18 +210,21 @@ def main():
 
     if args.expander:
         expand_fn = expanders[args.expander]
-        passphrases = (''.join(p)
-                       for p in expand_fn(passphrases, args.repeat))
+        passphrases = expand_fn(passphrases, args.repeat)
+    else:
+        passphrases = ((passphrase,) for passphrase in passphrases)
 
     if args.min_length is not None and args.max_length is not None:
         passphrases = (p for p in passphrases
-                       if args.min_length <= len(p) <= args.max_length)
+                       if args.min_length <= sum(map(len, p)) <= args.max_length)
     elif args.min_length is not None:
-        passphrases = (p for p in passphrases if args.min_length <= len(p))
+        passphrases = (p for p in passphrases
+                       if args.min_length <= sum(map(len, p)))
     elif args.max_length is not None:
-        passphrases = (p for p in passphrases if len(p) <= args.max_length)
+        passphrases = (p for p in passphrases
+                       if sum(map(len, p)) <= args.max_length)
 
-    results = ((passphrase, gen_eckey(passphrase=passphrase))
+    results = ((passphrase, gen_eckey(secret=gen_secret(passphrase)))
                for passphrase in passphrases)
 
     if args.candidates_file:
@@ -225,7 +234,9 @@ def main():
                    if rhash(key.get_pubkey()) in candidates)
 
     for passphrase, key in results:
-        print passphrase, get_addr(key)
+        for p in passphrase:
+                sys.stdout.write(p)
+        print '', get_addr(key)
 
 if __name__ == '__main__':
     main()
