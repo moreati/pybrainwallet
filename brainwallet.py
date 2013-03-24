@@ -3,7 +3,6 @@
 # willwharton/pyBrainwallet, February 2013, k
 # Joric/bitcoin-dev, june 2012, public domain
 import hashlib
-import itertools
 import ctypes
 import ctypes.util
 import sys
@@ -168,63 +167,34 @@ def get_addr(k):
     pkey = base58_check_encode(payload, 128)
     return addr, pkey
 
-def gen_secret(it):
-    h = hashlib.new('sha256')
-    for s in it:
-        h.update(s.encode('utf-8'))
-    return h.digest()
-
-# Method   seq  r  result                   Num results
-# product  ABCD 2  AA AB AC AD BA BB BC BD  n**r        4**2          16
-#                  CA CB CC CD DA DB DC DD    
-# perm'ns  ABCD 2  AB AC AD BA BC BD CA CB  n!/(n-r)!   4*3*2/2       12
-#                  CD DA DB DC
-# comb'ns  ABCD 2  AB AC AD BC BD CD        n!/r!(n-r)! 4*3*2/2*2      6
-# c'w'repl ABCD 2  AA AB AC AD BB BC BD CC  (n+r-1)!/r!(n-1)!
-#                  CD DD                                5*4*3*2/2*3*2 10
-
 def main():
     import argparse
-    expanders = {
-        'product': lambda it, r: itertools.product(it, repeat=r),
-        'permutations': itertools.permutations,
-        'combinations': itertools.combinations,
-        'combinations-replace': itertools.combinations_with_replacement,
-        }
     parser = argparse.ArgumentParser()
     parser.add_argument('passphrases', metavar='PASSPHRASE', nargs='*')
     parser.add_argument('-f', metavar='FILE', type=open, dest='dict_file')
     parser.add_argument('--min-length', type=int)
     parser.add_argument('--max-length', type=int)
-    parser.add_argument('--expander', choices=expanders)
-    parser.add_argument('-r', '--repeat', type=int, default=3)
     parser.add_argument('-c', '--candidates-file', type=open)
     args = parser.parse_args()
 
     if args.dict_file:
-        passphrases = (line.rstrip() for line in args.dict_file)
+        passphrases = (line.rstrip('\r\n') for line in args.dict_file)
     elif args.passphrases:
         passphrases = args.passphrases
     else:
-        passphrases = (line.rstrip() for line in sys.stdin)
-
-    if args.expander:
-        expand_fn = expanders[args.expander]
-        passphrases = expand_fn(passphrases, args.repeat)
-    else:
-        passphrases = ((passphrase,) for passphrase in passphrases)
+        passphrases = (line for line in sys.stdin)
 
     if args.min_length is not None and args.max_length is not None:
         passphrases = (p for p in passphrases
-                       if args.min_length <= sum(map(len, p)) <= args.max_length)
+                       if args.min_length <= len(p) <= args.max_length)
     elif args.min_length is not None:
         passphrases = (p for p in passphrases
-                       if args.min_length <= sum(map(len, p)))
+                       if args.min_length <= len(p))
     elif args.max_length is not None:
         passphrases = (p for p in passphrases
-                       if sum(map(len, p)) <= args.max_length)
+                       if len(p) <= args.max_length)
 
-    results = ((passphrase, gen_eckey(secret=gen_secret(passphrase)))
+    results = ((passphrase, gen_eckey(passphrase))
                for passphrase in passphrases)
 
     if args.candidates_file:
@@ -234,9 +204,7 @@ def main():
                    if rhash(key.get_pubkey()) in candidates)
 
     for passphrase, key in results:
-        for p in passphrase:
-                sys.stdout.write(p)
-        print '', get_addr(key)
+        print passphrase, get_addr(key)
 
 if __name__ == '__main__':
     main()
