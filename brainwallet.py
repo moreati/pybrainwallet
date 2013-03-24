@@ -167,6 +167,15 @@ def get_addr(k):
         payload = secret + chr(1)
     pkey = base58_check_encode(payload, 128)
     return addr, pkey
+	
+# Method   seq  r  result                   Num results
+# product  ABCD 2  AA AB AC AD BA BB BC BD  n**r        4**2          16
+#                  CA CB CC CD DA DB DC DD    
+# perm'ns  ABCD 2  AB AC AD BA BC BD CA CB  n!/(n-r)!   4*3*2/2       12
+#                  CD DA DB DC
+# comb'ns  ABCD 2  AB AC AD BC BD CD        n!/r!(n-r)! 4*3*2/2*2      6
+# c'w'repl ABCD 2  AA AB AC AD BB BC BD CC  (n+r-1)!/r!(n-1)!
+#                  CD DD                                5*4*3*2/2*3*2 10
 
 def main():
     import argparse
