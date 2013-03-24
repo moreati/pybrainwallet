@@ -149,7 +149,7 @@ def gen_eckey(passphrase=None, secret=None, pkey=None, compressed=False, rounds=
         secret = passphrase.encode('utf8')
         for i in xrange(rounds):
             secret = hashlib.sha256(secret).digest()
-    if pkey:
+    elif pkey:
         secret = base58_check_decode(pkey, 128)
         compressed = len(secret) == 33
         secret = secret[0:32]
