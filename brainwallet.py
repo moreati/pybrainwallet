@@ -171,7 +171,7 @@ def get_addr(k):
 def main():
     import argparse
     expanders = {
-        'product': lambda it, r: itertools.product(*it, repeat=r),
+        'product': lambda it, r: itertools.product(it, repeat=r),
         'permutations': itertools.permutations,
         'combinations': itertools.combinations,
         'combinations-replace': itertools.combinations_with_replacement,
