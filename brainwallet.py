@@ -182,7 +182,7 @@ def main():
     parser.add_argument('--min-length', type=int)
     parser.add_argument('--max-length', type=int)
     parser.add_argument('--expander', choices=expanders)
-    parser.add_argument('-n', type=int, default=3)
+    parser.add_argument('-r', '--repeat', type=int, default=3)
     parser.add_argument('-c', '--candidates-file', type=open)
     args = parser.parse_args()
 
@@ -193,7 +193,8 @@ def main():
 
     if args.expander:
         expand_fn = expanders[args.expander]
-        passphrases = (''.join(p) for p in expand_fn(passphrases, args.n))
+        passphrases = (''.join(p)
+                       for p in expand_fn(passphrases, args.repeat))
 
     if args.min_length is not None and args.max_length is not None:
         passphrases = (p for p in passphrases
