@@ -190,6 +190,8 @@ def main():
         passphrases = (line.rstrip() for line in args.dict_file)
     elif args.passphrases:
         passphrases = args.passphrases
+    else:
+        passphrases = (line.rstrip() for line in sys.stdin)
 
     if args.expander:
         expand_fn = expanders[args.expander]
